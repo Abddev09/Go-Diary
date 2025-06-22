@@ -19,7 +19,7 @@ WorkingDirectory=/var/www/blog
 ExecStart=/usr/local/bin/blog-server
 Restart=always
 RestartSec=5
-Environment=DATABASE_URL=postgres://blog_user:abdulloh_009@localhost/blog_system?sslmode=disable
+Environment=DATABASE_URL=postgresql://blog_user:0QyfSUPcO6kpq9ya5HkTLeWqz7mJaqwy@dpg-d1c1k83e5dus73f3h6eg-a.oregon-postgres.render.com/blogapi_2ge8
 Environment=PORT=8080
 
 # Logging

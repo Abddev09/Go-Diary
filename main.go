@@ -18,7 +18,7 @@ func initDB() {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		// Default connection string
-		dbURL = "postgres://blog_user:abdulloh_009@localhost/blog_system?sslmode=disable"
+		dbURL = "postgresql://blog_user:0QyfSUPcO6kpq9ya5HkTLeWqz7mJaqwy@dpg-d1c1k83e5dus73f3h6eg-a.oregon-postgres.render.com/blogapi_2ge8"
 		// Yoki agar parol bo'lsa:
 		// dbURL = "postgres://postgres:yourpassword@localhost/blog_system?sslmode=disable"
 		// Yoki yangi foydalanuvchi uchun:
@@ -124,6 +124,6 @@ func main() {
 		http.ServeFile(w, r, "static/all-posts.html")
 	})
 
-	log.Println("Server starting on :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+	log.Println("Server starting on :9080")
+	log.Fatal(http.ListenAndServe(":9080", r))
 }
