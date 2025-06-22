@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mening postlarim - Blog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl font-bold">Blog System</h1>
+                <div class="flex items-center space-x-4">
+                    <span id="username" class="text-gray-600"></span>
+                    <a href="/all-posts.html" class="text-blue-600 hover:text-blue-500">Barcha postlar</a>
+                    <button id="logoutBtn" class="text-red-600 hover:text-red-500">Chiqish</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6">Mening postlarim</h2>
+            
+            <!-- Yangi post qo'shish formi -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h3 class="text-lg font-semibold mb-4">Yangi post qo'shish</h3>
+                
+                <form id="postForm" class="space-y-4">
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-gray-700">Sarlavha</label>
+                        <input type="text" id="title" name="title" required
+                               class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Tavsif</label>
+                        <textarea id="description" name="description" rows="4" required
+                                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="image_url" class="block text-sm font-medium text-gray-700">Rasm URL</label>
+                            <input type="url" id="image_url" name="image_url"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        
+                        <div>
+                            <label for="image_file" class="block text-sm font-medium text-gray-700">Yoki fayl yuklash</label>
+                            <input type="file" id="image_file" name="image_file" accept="image/*"
+                                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="submitBtn"
+                            class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        Post qo'shish
+                    </button>
+                </form>
+                
+                <div id="message" class="mt-4 text-center hidden"></div>
+            </div>
+            
+            <!-- Postlar ro'yxati -->
+            <div id="postsContainer" class="space-y-6">
+                <!-- Postlar bu yerda ko'rsatiladi -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Autentifikatsiyani tekshirish
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+        
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+        
+        document.getElementById('username').textContent = username || 'Foydalanuvchi';
+        
+        // Chiqish
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = '/login.html';
+        });
+        
+        // Post qo'shish
+        document.getElementById('postForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const messageDiv = document.getElementById('message');
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Yuklanmoqda...';
+            
+            const formData = new FormData(e.target);
+            
+            try {
+                const response = await fetch('/posts', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    messageDiv.className = 'mt-4 text-center text-green-600';
+                    messageDiv.textContent = 'Post muvaffaqiyatli qo\'shildi!';
+                    messageDiv.classList.remove('hidden');
+                    
+                    e.target.reset();
+                    loadMyPosts();
+                } else {
+                    const error = await response.text();
+                    messageDiv.className = 'mt-4 text-center text-red-600';
+                    messageDiv.textContent = error || 'Xatolik yuz berdi';
+                    messageDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                messageDiv.className = 'mt-4 text-center text-red-600';
+                messageDiv.textContent = 'Server bilan bog\'lanishda xatolik';
+                messageDiv.classList.remove('hidden');
+            }
+            
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Post qo\'shish';
+        });
+        
+        // Mening postlarini yuklash
+        async function loadMyPosts() {
+            try {
+                const response = await fetch('/posts/mine', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const posts = await response.json();
+                    displayPosts(posts);
+                } else {
+                    console.error('Postlarni yuklashda xatolik');
+                }
+            } catch (error) {
+                console.error('Server bilan bog\'lanishda xatolik:', error);
+            }
+        }
+        
+        // Postlarni ko'rsatish
+        function displayPosts(posts) {
+            const container = document.getElementById('postsContainer');
+            
+            if (posts.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500">Hozircha postlaringiz yo\'q</p>';
+                return;
+            }
+            
+            container.innerHTML = posts.map(post => `
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-semibold">${post.title}</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="editPost(${post.id})" class="text-blue-600 hover:text-blue-500">Tahrirlash</button>
+                            <button onclick="deletePost(${post.id})" class="text-red-600 hover:text-red-500">O'chirish</button>
+                        </div>
+                    </div>
+                    
+                    ${post.image_url || post.image_file ? `
+                        <img src="${post.image_url || '/uploads/' + post.image_file}" 
+                             alt="${post.title}" 
+                             class="w-full h-48 object-cover rounded-md mb-4">
+                    ` : ''}
+                    
+                    <p class="text-gray-700 mb-4">${post.description}</p>
+                    
+                    <div class="text-sm text-gray-500">
+                        ${new Date(post.created_at).toLocaleDateString('uz-UZ')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Post o'chirish
+        async function deletePost(postId) {
+            if (!confirm('Rostdan ham bu postni o\'chirmoqchimisiz?')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/posts/${postId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    loadMyPosts();
+                } else {
+                    alert('Post o\'chirishda xatolik yuz berdi');
+                }
+            } catch (error) {
+                alert('Server bilan bog\'lanishda xatolik');
+            }
+        }
+        
+        // Post tahrirlash (sodda versiya)
+        function editPost(postId) {
+            alert('Tahrirlash funksiyasi keyingi versiyada qo\'shiladi');
+        }
+        
+        // Sahifa yuklanganda postlarni yuklash
+        loadMyPosts();
+    </script>
+</body>
+</html>

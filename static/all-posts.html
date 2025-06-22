@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barcha postlar - Blog</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex justify-between items-center">
+                <h1 class="text-xl font-bold">Blog System</h1>
+                <div class="flex items-center space-x-4">
+                    <span id="username" class="text-gray-600"></span>
+                    <div id="authLinks">
+                        <a href="/login.html" class="text-blue-600 hover:text-blue-500">Kirish</a>
+                        <a href="/register.html" class="text-blue-600 hover:text-blue-500 ml-4">Ro'yxatdan o'tish</a>
+                    </div>
+                    <div id="userLinks" class="hidden">
+                        <a href="/my-posts.html" class="text-blue-600 hover:text-blue-500">Mening postlarim</a>
+                        <button id="logoutBtn" class="text-red-600 hover:text-red-500 ml-4">Chiqish</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6">Barcha postlar</h2>
+            
+            <!-- Postlar ro'yxati -->
+            <div id="postsContainer" class="space-y-6">
+                <!-- Postlar bu yerda ko'rsatiladi -->
+            </div>
+            
+            <div id="loading" class="text-center py-8">
+                <p class="text-gray-500">Yuklanmoqda...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Autentifikatsiya holatini tekshirish
+        const token = localStorage.getItem('token');
+        const username = localStorage.getItem('username');
+        
+        if (token && username) {
+            document.getElementById('username').textContent = username;
+            document.getElementById('authLinks').classList.add('hidden');
+            document.getElementById('userLinks').classList.remove('hidden');
+        }
+        
+        // Chiqish
+        document.getElementById('logoutBtn')?.addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.reload();
+        });
+        
+        // Barcha postlarni yuklash
+        async function loadAllPosts() {
+            const loadingDiv = document.getElementById('loading');
+            
+            try {
+                const response = await fetch('/posts');
+                
+                if (response.ok) {
+                    const posts = await response.json();
+                    displayPosts(posts);
+                } else {
+                    console.error('Postlarni yuklashda xatolik');
+                }
+            } catch (error) {
+                console.error('Server bilan bog\'lanishda xatolik:', error);
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+        
+        // Postlarni ko'rsatish
+        function displayPosts(posts) {
+            const container = document.getElementById('postsContainer');
+            
+            if (posts.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500">Hozircha postlar yo\'q</p>';
+                return;
+            }
+            
+            container.innerHTML = posts.map(post => `
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-semibold">${post.title}</h3>
+                        <div class="text-sm text-gray-500">
+                            ${post.author_username}
+                        </div>
+                    </div>
+                    
+                    ${post.image_url || post.image_file ? `
+                        <img src="${post.image_url || '/uploads/' + post.image_file}" 
+                             alt="${post.title}" 
+                             class="w-full h-48 object-cover rounded-md mb-4">
+                    ` : ''}
+                    
+                    <p class="text-gray-700 mb-4">${post.description}</p>
+                    
+                    <div class="text-sm text-gray-500">
+                        ${new Date(post.created_at).toLocaleDateString('uz-UZ')} - ${post.author_username}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Sahifa yuklanganda postlarni yuklash
+        loadAllPosts();
+    </script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: blog_system
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: abdulloh_009
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/001-create-database.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+  blog-server:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgres://blog_user:abdulloh_009@postgres:5432/blog_system?sslmode=disable
+    depends_on:
+      - postgres
+    volumes:
+      - ./uploads:/root/uploads
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
